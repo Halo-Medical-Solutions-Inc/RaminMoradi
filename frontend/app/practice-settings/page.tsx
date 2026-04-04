@@ -225,7 +225,7 @@ export default function PracticeSettingsPage() {
   const { users } = useAppSelector((state) => state.users);
   const { invitations } = useAppSelector((state) => state.invitations);
 
-  const [activeTab, setActiveTab] = useState<"teams" | "members" | "general">("teams");
+  const [activeTab, setActiveTab] = useState<"teams" | "members" | "general" | "info">("teams");
   const [practiceName, setPracticeName] = useState("");
   const [practiceRegion, setPracticeRegion] = useState("");
   const [priorityLow, setPriorityLow] = useState("");
@@ -723,6 +723,19 @@ export default function PracticeSettingsPage() {
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-neutral-900" />
               )}
             </button>
+            <button
+              onClick={() => setActiveTab("info")}
+              className={`relative pb-3 text-[14px] font-medium transition-colors whitespace-nowrap ${
+                activeTab === "info"
+                  ? "text-neutral-900"
+                  : "text-neutral-500 hover:text-neutral-700"
+              }`}
+            >
+              Info
+              {activeTab === "info" && (
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-neutral-900" />
+              )}
+            </button>
           </div>
         </div>
       </header>
@@ -1142,6 +1155,28 @@ export default function PracticeSettingsPage() {
                 <p className="text-[14px] text-neutral-500">No team members found</p>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "info" && (
+          <div className="max-w-2xl">
+            <div className="space-y-6">
+              <div
+                className="rounded-lg border border-neutral-100 p-6"
+                style={{ backgroundColor: "#FDFDFD" }}
+              >
+                <h3 className="text-[14px] font-medium text-neutral-900 mb-4">Phone Configuration</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-md border border-neutral-100 bg-white px-4 py-3">
+                    <div>
+                      <p className="text-[13px] font-medium text-neutral-700">Twilio Number</p>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">Inbound call number attached to this practice</p>
+                    </div>
+                    <p className="text-[14px] font-medium text-neutral-900">+1 (559) 272-5526</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
