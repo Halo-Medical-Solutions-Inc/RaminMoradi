@@ -141,6 +141,7 @@ async def _handle_assistant_request(
                 overrides["firstMessage"] = (
                     "Hello, you've reached Moradi Signature Smiles. "
                     "If this is a medical emergency, please hang up and dial 9-1-1. "
+                    "Our team is currently busy helping other patients, but I'd be happy to take your message. "
                     "Welcome back — are you calling about the same thing as before, "
                     "or is this something new?"
                 )
