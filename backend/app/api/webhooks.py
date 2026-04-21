@@ -4,14 +4,14 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request
 
-from app.utils.business_hours import is_off_hours
+from app.utils.business_hours import CallPeriod, get_call_period, is_off_hours
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database.session import get_db
 from app.models.call import CallStatus
-from app.prompts import BASE_MORADI_PROMPT, build_returning_caller_prompt
+from app.prompts import BASE_MORADI_PROMPT
 from app.services import (
     call_completion_service,
     call_service,
@@ -110,6 +110,19 @@ async def vapi_webhook(
     return {"success": True}
 
 
+_VOICE_OVERRIDE: Dict[str, Any] = {
+    "provider": "11labs",
+    "voiceId": "uMM5TEnpKKgD758knVJO",
+    "model": "eleven_flash_v2_5",
+}
+
+_FIRST_MESSAGE_FILES: Dict[CallPeriod, str] = {
+    "normal": "first-message.wav",
+    "lunch": "first-message-lunch.wav",
+    "after_hours": "first-message-after-hours.wav",
+}
+
+
 def _build_model_override(prompt: str) -> Dict[str, Any]:
     return {
         "provider": "openai",
@@ -119,35 +132,21 @@ def _build_model_override(prompt: str) -> Dict[str, Any]:
     }
 
 
+def _build_first_message_url() -> str:
+    period = get_call_period()
+    filename = _FIRST_MESSAGE_FILES[period]
+    base_url = settings.FRONTEND_URL.rstrip("/")
+    return f"{base_url}/{filename}"
+
+
 async def _handle_assistant_request(
     db: AsyncSession, body: Dict[str, Any]
 ) -> Dict[str, Any]:
     overrides: Dict[str, Any] = {
         "model": _build_model_override(BASE_MORADI_PROMPT),
+        "voice": _VOICE_OVERRIDE,
+        "firstMessage": _build_first_message_url(),
     }
-
-    try:
-        call_data = body.get("message", {}).get("call", {})
-        caller_phone = call_data.get("customer", {}).get("number", "")
-
-        if caller_phone:
-            previous_calls = await call_service.find_completed_calls_by_number(
-                db, caller_phone
-            )
-            if previous_calls:
-                display_data = call_service.decrypt_display_data(previous_calls[0])
-                summary = (display_data or {}).get("summary", "")
-                prompt = build_returning_caller_prompt(summary)
-                overrides["firstMessage"] = (
-                    "Hello, you've reached Moradi Signature Smiles. "
-                    "If this is a medical emergency, please hang up and dial 9-1-1. "
-                    "Our team is currently busy helping other patients, but I'd be happy to take your message. "
-                    "Welcome back — are you calling about the same thing as before, "
-                    "or is this something new?"
-                )
-                overrides["model"] = _build_model_override(prompt)
-    except Exception as e:
-        print(f"Error in assistant-request lookup: {e}")
 
     return {
         "assistantId": settings.VAPI_ASSISTANT_ID,
