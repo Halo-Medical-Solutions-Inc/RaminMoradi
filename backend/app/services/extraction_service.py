@@ -40,6 +40,9 @@ async def run_extraction(call_id: UUID) -> None:
             practice = await practice_service.get_practice(db)
             teams = await practice_service.get_teams(db)
             team_names = [t.title for t in teams] if teams else None
+            team_title_to_description = (
+                {t.title: t.description for t in teams} if teams else None
+            )
             priority_config = (practice.priority_config if practice else None) or {}
 
             provider_names = [
@@ -56,6 +59,7 @@ async def run_extraction(call_id: UUID) -> None:
             extraction_schema = build_extraction_schema(
                 provider_names,
                 team_names=team_names,
+                team_title_to_description=team_title_to_description,
                 staff_extension_map=staff_extension_map,
                 priority_descriptions=priority_config if priority_config else None,
             )
@@ -112,9 +116,7 @@ async def run_extraction(call_id: UUID) -> None:
                     db, call, ExtractionStatus.FAILED
                 )
                 print(f"[EXTRACTION] Extraction failed for call {call_id}")
-                await _broadcast_extraction_update(
-                    call_id, ExtractionStatus.FAILED
-                )
+                await _broadcast_extraction_update(call_id, ExtractionStatus.FAILED)
 
     except Exception as e:
         print(f"[EXTRACTION] Error during extraction for call {call_id}: {e}")
@@ -151,9 +153,9 @@ async def _try_auto_review(
     return {
         "is_reviewed": True,
         "reviewed_by": None,
-        "reviewed_at": reviewed_call.reviewed_at.isoformat()
-        if reviewed_call.reviewed_at
-        else None,
+        "reviewed_at": (
+            reviewed_call.reviewed_at.isoformat() if reviewed_call.reviewed_at else None
+        ),
     }
 
 
