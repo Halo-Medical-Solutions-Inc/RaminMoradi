@@ -113,7 +113,7 @@ async def vapi_webhook(
 _VOICE_OVERRIDE: Dict[str, Any] = {
     "provider": "11labs",
     "voiceId": "uMM5TEnpKKgD758knVJO",
-    "model": "eleven_flash_v2_5",
+    "model": "eleven_multilingual_v2",
 }
 
 _FIRST_MESSAGE_FILES: Dict[CallPeriod, str] = {
